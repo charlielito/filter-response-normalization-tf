@@ -8,6 +8,8 @@ class FilterResponseNormalization(tf.keras.layers.Layer):
     Arguments:
         eps : float, optional
             Epsilon value to avoid division by zero, by default 1e-15
+        trainable_eps : bool, optional
+            Wheter the epsilon value when normalizing is learned or not
         beta_initializer : str, optional
             Initializer for beta weight, by default "ones"
         beta_regularizer : str, optional
@@ -39,9 +41,10 @@ class FilterResponseNormalization(tf.keras.layers.Layer):
 
     def __init__(
         self,
-        eps=1e-15,
-        beta_initializer="ones",
-        gamma_initializer="zeros",
+        eps=1e-6,
+        trainable_eps=False,
+        beta_initializer="zeros",
+        gamma_initializer="ones",
         tau_initializer="zeros",
         beta_regularizer=None,
         gamma_regularizer=None,
@@ -52,7 +55,10 @@ class FilterResponseNormalization(tf.keras.layers.Layer):
         **kwargs
     ):
         super().__init__(**kwargs)
-        self.eps = eps
+        self.eps_const_value = eps
+        self.eps = self.add_weight(
+            shape=(), name="eps", trainable=trainable_eps, initializer="zeros"
+        )
         self.beta_initializer = tf.keras.initializers.get(beta_initializer)
         self.gamma_initializer = tf.keras.initializers.get(gamma_initializer)
         self.tau_initializer = tf.keras.initializers.get(tau_initializer)
@@ -105,11 +111,11 @@ class FilterResponseNormalization(tf.keras.layers.Layer):
         """
 
         # Computes the mean norm of activations per channel.
-        nu2 = tf.math.reduce_mean(tf.math.square(x), axis=[1, 2], keepdims=True)
+        nu2 = tf.reduce_mean(tf.square(x), axis=[1, 2], keepdims=True)
         # Performs FRN: x = x/sqrt(nu^2)
-        x = x * tf.math.rsqrt(nu2 + self.eps)
+        x = x * tf.math.rsqrt(nu2 + self.eps_const_value + tf.abs(self.eps))
         # Performs TLU activation
-        x = tf.math.maximum(self.beta * x + self.gamma, self.tau)
+        x = tf.math.maximum(self.gamma * x + self.beta, self.tau)
         return x
 
     def compute_output_shape(input_shape):

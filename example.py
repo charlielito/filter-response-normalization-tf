@@ -7,7 +7,7 @@ if __name__ == "__main__":
     model = tf.keras.Sequential(
         [
             tf.keras.layers.Conv2D(16, 3, input_shape=shape),
-            FilterResponseNormalization(),
+            FilterResponseNormalization(trainable_eps=True),
             tf.keras.layers.Conv2D(32, 3),
             FilterResponseNormalization(),
             tf.keras.layers.Conv2D(64, 3),
