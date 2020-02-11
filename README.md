@@ -1,2 +1,3 @@
-# filter-response-normalization-tf
-Tensorflow Filter Response Normalization Layer
+# Tensorflow Filter Response Normalization Layer
+
+Implementation in tensorflow 2 of new normalization method [Filter Response Normalization Layer: Eliminating Batch Dependence in the Training of Deep Neural Networks](https://arxiv.org/pdf/1911.09737.pdf) that outperforms batch normalization and other normalization methods at all batch sizes. It implements the Filter Response Normalization Layer (FRN) with the Thresholded Linear Unit (TLU).
