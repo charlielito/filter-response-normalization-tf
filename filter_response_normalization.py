@@ -44,7 +44,7 @@ class FilterResponseNormalization(tf.keras.layers.Layer):
         **kwargs
     ):
         super().__init__(**kwargs)
-        self.eps = tf.Variable(eps)
+        self.eps = eps
         self.weight_initializer = tf.keras.initializers.get(weight_initializer)
         self.weight_regularizer = tf.keras.regularizers.get(weight_regularizer)
         self.weight_constraint = tf.keras.constraints.get(weight_constraint)
@@ -61,6 +61,7 @@ class FilterResponseNormalization(tf.keras.layers.Layer):
         """
 
         shape = input_shape[-1:]
+
         self.beta = self.add_weight(
             shape=shape,
             initializer=self.weight_initializer,
@@ -82,7 +83,6 @@ class FilterResponseNormalization(tf.keras.layers.Layer):
             constraint=self.threshold_constraint,
             name="tau",
         )
-        super().build(input_shape)
 
     def call(self, x):
         """        
