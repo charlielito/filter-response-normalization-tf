@@ -3,57 +3,65 @@ import tensorflow as tf
 
 class FilterResponseNormalization(tf.keras.layers.Layer):
     """
-    Filter response normalization layer according to https://arxiv.org/pdf/1911.09737.pdf
+    Filter response normalization layer (Singh S, Krishnan S 2019)
     
-    Parameters
-    ----------
-    eps : float, optional
-        Epsilon value to avoid division by zero, by default 1e-15
-    weight_initializer : str, optional
-        Initializer for weights, by default "ones"
-    weight_regularizer : str, optional
-        Regularizer for weights, by default None
-    weight_constraint : str, optional
-        Constraints for weights, by default None
-    bias_initializer : str, optional
-        Initializer for biases, by default "zeros"
-    bias_regularizer : str, optional
-        Regularizer for biases, by default None
-    bias_constraint : str, optional
-        Constraints for biases, by default None
-    threshold_initializer : str, optional
-        Initializer for thresholded unit, by default "zeros"
-    threshold_regularizer : str, optional
-        Regularizer for thresholded unit, by default None
-    threshold_constraint : str, optional
-        Constraints for thresholded unit, by default None
+    Arguments:
+        eps : float, optional
+            Epsilon value to avoid division by zero, by default 1e-15
+        beta_initializer : str, optional
+            Initializer for beta weight, by default "ones"
+        beta_regularizer : str, optional
+            Regularizer for beta weight, by default None
+        beta_constraint : str, optional
+            Constraint for beta weight, by default None
+        gamma_initializer : str, optional
+            Initializer for gamma weight, by default "zeros"
+        gamma_regularizer : str, optional
+            Regularizer for gamma weight, by default None
+        gamma_constraint : str, optional
+            Constraint for gamma weight, by default None
+        tau_initializer : str, optional
+            Initializer for tau weight, by default "zeros"
+        tau_regularizer : str, optional
+            Regularizer for tau weight, by default None
+        tau_constraint : str, optional
+            Constraint for tau weight, by default None
+
+    Input shape:
+        Any 2D array with arbitrary number of channels, shape HxWxC
+
+    Output shape:
+        Same shape as input.
+
+    References:
+        - [Filter Response Normalization](https://arxiv.org/abs/1607.06450)
     """
 
     def __init__(
         self,
         eps=1e-15,
-        weight_initializer="ones",
-        weight_regularizer=None,
-        weight_constraint=None,
-        bias_initializer="zeros",
-        bias_regularizer=None,
-        bias_constraint=None,
-        threshold_initializer="zeros",
-        threshold_regularizer=None,
-        threshold_constraint=None,
+        beta_initializer="ones",
+        gamma_initializer="zeros",
+        tau_initializer="zeros",
+        beta_regularizer=None,
+        gamma_regularizer=None,
+        tau_regularizer=None,
+        beta_constraint=None,
+        gamma_constraint=None,
+        tau_constraint=None,
         **kwargs
     ):
         super().__init__(**kwargs)
         self.eps = eps
-        self.weight_initializer = tf.keras.initializers.get(weight_initializer)
-        self.weight_regularizer = tf.keras.regularizers.get(weight_regularizer)
-        self.weight_constraint = tf.keras.constraints.get(weight_constraint)
-        self.bias_initializer = tf.keras.initializers.get(bias_initializer)
-        self.bias_regularizer = tf.keras.regularizers.get(bias_regularizer)
-        self.bias_constraint = tf.keras.constraints.get(bias_constraint)
-        self.threshold_constraint = tf.keras.constraints.get(threshold_constraint)
-        self.threshold_regularizer = tf.keras.regularizers.get(threshold_regularizer)
-        self.threshold_initializer = tf.keras.initializers.get(threshold_initializer)
+        self.beta_initializer = tf.keras.initializers.get(beta_initializer)
+        self.gamma_initializer = tf.keras.initializers.get(gamma_initializer)
+        self.tau_initializer = tf.keras.initializers.get(tau_initializer)
+        self.beta_regularizer = tf.keras.regularizers.get(beta_regularizer)
+        self.gamma_regularizer = tf.keras.regularizers.get(gamma_regularizer)
+        self.tau_regularizer = tf.keras.regularizers.get(tau_regularizer)
+        self.beta_constraint = tf.keras.constraints.get(beta_constraint)
+        self.gamma_constraint = tf.keras.constraints.get(gamma_constraint)
+        self.tau_constraint = tf.keras.constraints.get(tau_constraint)
 
     def build(self, input_shape):
         """
@@ -64,37 +72,36 @@ class FilterResponseNormalization(tf.keras.layers.Layer):
 
         self.beta = self.add_weight(
             shape=shape,
-            initializer=self.weight_initializer,
-            regularizer=self.weight_regularizer,
-            constraint=self.weight_constraint,
+            initializer=self.beta_initializer,
+            regularizer=self.beta_regularizer,
+            constraint=self.beta_constraint,
             name="beta",
         )
         self.gamma = self.add_weight(
             shape=shape,
-            initializer=self.bias_initializer,
-            regularizer=self.bias_regularizer,
-            constraint=self.bias_constraint,
+            initializer=self.gamma_initializer,
+            regularizer=self.gamma_regularizer,
+            constraint=self.gamma_constraint,
             name="gamma",
         )
         self.tau = self.add_weight(
             shape=shape,
-            initializer=self.threshold_initializer,
-            regularizer=self.threshold_regularizer,
-            constraint=self.threshold_constraint,
+            initializer=self.tau_initializer,
+            regularizer=self.tau_regularizer,
+            constraint=self.tau_constraint,
             name="tau",
         )
 
     def call(self, x):
         """        
-        Parameters
-        ----------
-        x : tensorflow tensor
-            Input tensor of shape NxHxWxC
+        Arguments:
+            x : tensorflow tensor
+                Input tensor of shape NxHxWxC
         
-        Returns
-        -------
-        tensorflow tensor
-            Output tensor with the filter response normalization and thresholded linear unit activation
+        Returns:
+            tensorflow tensor
+                Output tensor with the filter response normalization and thresholded 
+                linear unit activation
         """
 
         # Computes the mean norm of activations per channel.
@@ -114,23 +121,15 @@ class FilterResponseNormalization(tf.keras.layers.Layer):
     def get_config(self):
         config = {
             "epsilon": self.eps,
-            "beta_initializer": tf.keras.initializers.serialize(self.bias_initializer),
-            "gamma_initializer": tf.keras.initializers.serialize(
-                self.weight_initializer
-            ),
-            "tau_initializer": tf.keras.initializers.serialize(
-                self.threshold_initializer
-            ),
-            "beta_regularizer": tf.keras.regularizers.serialize(self.bias_regularizer),
-            "gamma_regularizer": tf.keras.regularizers.serialize(
-                self.weight_regularizer
-            ),
-            "tau_regularizer": tf.keras.regularizers.serialize(
-                self.threshold_regularizer
-            ),
-            "beta_constraint": tf.keras.constraints.serialize(self.bias_constraint),
-            "gamma_constraint": tf.keras.constraints.serialize(self.weight_constraint),
-            "tau_constraint": tf.keras.constraints.serialize(self.threshold_constraint),
+            "beta_initializer": tf.keras.initializers.serialize(self.gamma_initializer),
+            "gamma_initializer": tf.keras.initializers.serialize(self.beta_initializer),
+            "tau_initializer": tf.keras.initializers.serialize(self.tau_initializer),
+            "beta_regularizer": tf.keras.regularizers.serialize(self.gamma_regularizer),
+            "gamma_regularizer": tf.keras.regularizers.serialize(self.beta_regularizer),
+            "tau_regularizer": tf.keras.regularizers.serialize(self.tau_regularizer),
+            "beta_constraint": tf.keras.constraints.serialize(self.gamma_constraint),
+            "gamma_constraint": tf.keras.constraints.serialize(self.beta_constraint),
+            "tau_constraint": tf.keras.constraints.serialize(self.tau_constraint),
         }
         base_config = super().get_config()
         return dict(list(base_config.items()) + list(config.items()))
