@@ -11,21 +11,21 @@ class FilterResponseNormalization(tf.keras.layers.Layer):
         Epsilon value to avoid division by zero, by default 1e-15
     weight_initializer : str, optional
         Initializer for weights, by default "ones"
-    weight_regularizer : [type], optional
+    weight_regularizer : str, optional
         Regularizer for weights, by default None
-    weight_constraint : [type], optional
+    weight_constraint : str, optional
         Constraints for weights, by default None
     bias_initializer : str, optional
         Initializer for biases, by default "zeros"
-    bias_regularizer : [type], optional
+    bias_regularizer : str, optional
         Regularizer for biases, by default None
-    bias_constraint : [type], optional
+    bias_constraint : str, optional
         Constraints for biases, by default None
     threshold_initializer : str, optional
         Initializer for thresholded unit, by default "zeros"
-    threshold_regularizer : [type], optional
+    threshold_regularizer : str, optional
         Regularizer for thresholded unit, by default None
-    threshold_constraint : [type], optional
+    threshold_constraint : str, optional
         Constraints for thresholded unit, by default None
     """
 
@@ -97,18 +97,18 @@ class FilterResponseNormalization(tf.keras.layers.Layer):
             Output tensor with the filter response normalization and thresholded linear unit activation
         """
 
-        # Compute the mean norm of activations per channel.
+        # Computes the mean norm of activations per channel.
         nu2 = tf.math.reduce_mean(tf.math.square(x), axis=[1, 2], keepdims=True)
-        # Perform FRN: x = x/sqrt(nu^2)
-        x = x * tf.math.rsqrt(nu2 + tf.math.abs(self.eps))
-        # Perform TLU activation
+        # Performs FRN: x = x/sqrt(nu^2)
+        x = x * tf.math.rsqrt(nu2 + self.eps)
+        # Performs TLU activation
         x = tf.math.maximum(self.beta * x + self.gamma, self.tau)
         return x
 
     @staticmethod
     def compute_output_shape(input_shape):
         """
-        The output shape will be the same as the input shape.
+        The output shape equals the input shape.
         """
         return input_shape
 
