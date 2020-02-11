@@ -105,7 +105,6 @@ class FilterResponseNormalization(tf.keras.layers.Layer):
         x = tf.math.maximum(self.beta * x + self.gamma, self.tau)
         return x
 
-    @staticmethod
     def compute_output_shape(input_shape):
         """
         The output shape equals the input shape.
@@ -114,7 +113,7 @@ class FilterResponseNormalization(tf.keras.layers.Layer):
 
     def get_config(self):
         config = {
-            "epsilon": self.epsilon,
+            "epsilon": self.eps,
             "beta_initializer": tf.keras.initializers.serialize(self.bias_initializer),
             "gamma_initializer": tf.keras.initializers.serialize(
                 self.weight_initializer
